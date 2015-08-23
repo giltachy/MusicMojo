@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <File name="FILE" fileName="E:/Sudheer/JavaDev/Logs/TestHtmllogs.log">
+            <PatternLayout pattern="%d %p %c: %m%n" />
+        </File>
+
+        <RollingFile name="ROLLING" fileName="E:/Sudheer/JavaDev/Logs/TestHtmllogsroll.log" 
+        	 filePattern="D:/Sudheer/JavaDev/Logs/TestHtml-%d{yyyy-MM-dd-hh-mm-ss}_%i.log">
+            <PatternLayout pattern="%d %p %c: %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="1.001 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+    </Appenders>
+    <Loggers>
+        <Root level="fatal">
+            <AppenderRef ref="FILE" />
+        </Root>
+ 		<logger name="com.giltachy" level="debug" additivity="false">
+   			<appender-ref ref="FILE"/>
+ 		</logger>
+ 	</Loggers>
+    
+</Configuration>

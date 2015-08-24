@@ -7,6 +7,8 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,6 +16,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jaudiotagger.audio.exceptions.CannotWriteException;
@@ -36,10 +44,10 @@ public class MusicCollect {
 	/** The log. */
 	static Logger log = Logger.getLogger(
 			MusicCollect.class.getName());
-
-	//	public MusicCollect() {
-	//	}
-
+	final static String  applicationName ="MusicMojo";
+	static String processMode="";
+	static String workingDirectory="";
+	static Boolean helpRequired=false;
 	/**
 	 * The main method.
 	 *
@@ -59,10 +67,63 @@ public class MusicCollect {
 	InterruptedException{
 		
 
-		String rootFolder =
-		new String("E:/Download/Songs/WIP");
+		String rootFolder ="";
 	//	Writer writer = null;
 	//	String mode="PROCESS";
+		 displayBlankLines(1, System.out);
+	     displayHeader(System.out);
+	     displayBlankLines(2, System.out);
+	     
+	     useGnuParser(args);
+	    if(helpRequired){
+	    	printUsage( applicationName, constructGnuOptions(), System.out);
+			 printHelp(
+			            constructGnuOptions(), 80, "Help", "End of Help",
+			               5, 3, true, System.out);
+		} else if(processMode.length()==0 || processMode.isEmpty() ){
+			
+			 System.out.println("Oops! you missed mentionting the processing mode");
+			 printHelp(
+			            constructGnuOptions(), 80, "Help", "End of Help",
+			               5, 3, true, System.out);
+		} else 	if(workingDirectory.length()==0 || workingDirectory.isEmpty() ){
+			
+			 System.out.println("Oops! you missed providing the working directory");
+			 printHelp(
+			            constructGnuOptions(), 80, "Help", "End of Help",
+			               5, 3, true, System.out);
+		}
+	    rootFolder=workingDirectory;
+	    processMode=processMode.toLowerCase();
+	    switch (processMode){
+	    case "tag":
+	    	processSongs(rootFolder);
+	    	break;
+	    case "org":
+	    	organiseMp3File(rootFolder);
+	    	break;
+	    case "list":
+	    	File outputFile= new File(rootFolder+"/SongList.txt");
+			 BufferedWriter output = null;
+	
+			try {
+				
+				output=	 new BufferedWriter(new FileWriter(outputFile));
+				getAllMp3Files(rootFolder,output);
+			} catch (IOException ex) {
+			  // report
+			} finally {
+			   try {output.close();} catch (Exception ex) {}
+			}
+			break;
+		default:
+			System.out.println("Sorry! I don't know to process your request "
+					+processMode);
+			 printHelp(
+			            constructGnuOptions(), 80, "Help", "End of Help",
+			               5, 3, true, System.out);
+	    }
+	    	
 		
 		if(rootFolder.equals("a")){
 			//code to list all mp3 files
@@ -81,7 +142,7 @@ public class MusicCollect {
 		}
 		
 //		** MusicTagger.deleteAllTags(rootFolder); // Removes all tags from MP3
-		processSongs(rootFolder); // Check the online DB and update the tags
+//		processSongs(rootFolder); // Check the online DB and update the tags
 //		organiseMp3File(rootFolder); // Copies Songs by Year and Album Name
 
 
@@ -94,6 +155,177 @@ public class MusicCollect {
 		System.out.println("I've finished my job; enjoy the songs :)");
 
 	}
+	
+	 /**
+	    * Apply Apache Commons CLI GnuParser to command-line arguments.
+	    * 
+	    * @param commandLineArguments Command-line arguments to be processed with
+	    *    Gnu-style parser.
+	    */
+	   public static void useGnuParser(final String[] commandLineArguments)
+	   {
+	      final CommandLineParser cmdLineGnuParser = new GnuParser();
+
+	      final Options gnuOptions = constructGnuOptions();
+	      CommandLine commandLine;
+	      try
+	      {
+	         commandLine = cmdLineGnuParser.parse(gnuOptions, commandLineArguments);
+	         if ( commandLine.hasOption("help") )
+	         {
+	            helpRequired=true;
+	         }
+	         if ( commandLine.hasOption("mode") )
+	         {
+	        	  processMode= commandLine.getOptionValue("");
+	         }
+	         if ( commandLine.hasOption("working-directory") )
+	         {
+	            workingDirectory=commandLine.getOptionValue("");
+	         }
+	         
+	      }
+	      catch (ParseException parseException)  // checked exception
+	      {
+	         System.err.println(
+	              "Encountered exception while parsing using GnuParser:\n"
+	            + parseException.getMessage() );
+	      }
+	   }
+	   
+	   /**
+	    * Construct and provide GNU-compatible Options.
+	    * 
+	    * @return Options expected from command-line of GNU form.
+	    */
+	   public static Options constructGnuOptions()
+	   {
+	      final Options gnuOptions = new Options();
+	      gnuOptions.addOption("m", "mode", true, "Mode of processing the files viz tag/org/list")
+	                .addOption("w", "working-directory", true, 
+	                		"Working direcoty where mp3 files are stored")
+	                .addOption("h","help", false, "display help message");
+	      return gnuOptions;
+	   }
+	   
+	   /**
+	    * Display command-line arguments without processing them in any further way.
+	    * 
+	    * @param commandLineArguments Command-line arguments to be displayed.
+	    */
+	   public static void displayProvidedCommandLineArguments(
+	      final String[] commandLineArguments,
+	      final OutputStream out)
+	   {
+	      final StringBuffer buffer = new StringBuffer();
+	      for ( final String argument : commandLineArguments )
+	      {
+	         buffer.append(argument).append(" ");
+	      }
+	      try
+	      {
+	         out.write((buffer.toString() + "\n").getBytes());
+	      }
+	      catch (IOException ioEx)
+	      {
+	         System.err.println(
+	            "WARNING: Exception encountered trying to write to OutputStream:\n"
+	            + ioEx.getMessage() );
+	         System.out.println(buffer.toString());
+	      }
+	   }
+	   
+	   /**
+	    * Display example application header.
+	    * 
+	    * @out OutputStream to which header should be written.
+	    */
+	   public static void displayHeader(final OutputStream out)
+	   {
+	      final String header =
+	           "MusicMojo: App for enabling tagging of Malayalam MP3 songs";
+	      try
+	      {
+	         out.write(header.getBytes());
+	      }
+	      catch (IOException ioEx)
+	      {
+	         System.out.println(header);
+	      }
+	   }
+
+	   /**
+	    * Write the provided number of blank lines to the provided OutputStream.
+	    * 
+	    * @param numberBlankLines Number of blank lines to write.
+	    * @param out OutputStream to which to write the blank lines.
+	    */
+	   public static void displayBlankLines(
+	      final int numberBlankLines,
+	      final OutputStream out)
+	   {
+	      try
+	      {
+	         for (int i=0; i<numberBlankLines; ++i)
+	         {
+	            out.write("\n".getBytes());
+	         }
+	      }
+	      catch (IOException ioEx)
+	      {
+	         for (int i=0; i<numberBlankLines; ++i)
+	         {
+	            System.out.println();
+	         }
+	      }
+	   }
+
+	   /**
+	    * Print usage information to provided OutputStream.
+	    * 
+	    * @param applicationName Name of application to list in usage.
+	    * @param options Command-line options to be part of usage.
+	    * @param out OutputStream to which to write the usage information.
+	    */
+	   public static void printUsage(
+	      final String applicationName,
+	      final Options options,
+	      final OutputStream out)
+	   {
+	      final PrintWriter writer = new PrintWriter(out);
+	      final HelpFormatter usageFormatter = new HelpFormatter();
+	      usageFormatter.printUsage(writer, 80, applicationName, options);
+	      writer.flush();
+	   }
+
+	   /**
+	    * Write "help" to the provided OutputStream.
+	    */
+	   public static void printHelp(
+	      final Options options,
+	      final int printedRowWidth,
+	      final String header,
+	      final String footer,
+	      final int spacesBeforeOption,
+	      final int spacesBeforeOptionDescription,
+	      final boolean displayUsage,
+	      final OutputStream out)
+	   {
+	      final String commandLineSyntax = "java -cp MusicMojo.jar";
+	      final PrintWriter writer = new PrintWriter(out);
+	      final HelpFormatter helpFormatter = new HelpFormatter();
+	      helpFormatter.printHelp(
+	         writer,
+	         printedRowWidth,
+	         commandLineSyntax,
+	         header,
+	         options,
+	         spacesBeforeOption,
+	         spacesBeforeOptionDescription,
+	         footer,
+	         displayUsage);
+	      writer.flush();
+	   }
 	
 	/**
 	 * Process songs.

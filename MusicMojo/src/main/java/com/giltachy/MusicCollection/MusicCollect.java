@@ -168,20 +168,22 @@ public class MusicCollect {
 
 	      final Options gnuOptions = constructGnuOptions();
 	      CommandLine commandLine;
+	      displayProvidedCommandLineArguments(commandLineArguments, System.out);
 	      try
 	      {
 	         commandLine = cmdLineGnuParser.parse(gnuOptions, commandLineArguments);
 	         if ( commandLine.hasOption("help") )
 	         {
+	        	System.out.println("Needs help");
 	            helpRequired=true;
 	         }
-	         if ( commandLine.hasOption("mode") )
+	         if ( commandLine.hasOption("mode"))
 	         {
-	        	  processMode= commandLine.getOptionValue("");
+	        	  processMode= commandLine.getOptionValue("mode");
 	         }
 	         if ( commandLine.hasOption("working-directory") )
 	         {
-	            workingDirectory=commandLine.getOptionValue("");
+	            workingDirectory=commandLine.getOptionValue("working-directory");
 	         }
 	         
 	      }

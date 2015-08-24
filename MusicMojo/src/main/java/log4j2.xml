@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration>
     <Appenders>
-        <File name="FILE" fileName="E:/Sudheer/JavaDev/Logs/TestHtmllogs.log">
+        <File name="FILE" fileName="MusicMojo.log">
             <PatternLayout pattern="%d %p %c: %m%n" />
         </File>
 
-        <RollingFile name="ROLLING" fileName="E:/Sudheer/JavaDev/Logs/TestHtmllogsroll.log" 
-        	 filePattern="D:/Sudheer/JavaDev/Logs/TestHtml-%d{yyyy-MM-dd-hh-mm-ss}_%i.log">
+        <RollingFile name="ROLLING" fileName="MusicMojosroll.log" 
+        	 filePattern="MusicMojo-%d{yyyy-MM-dd-hh-mm-ss}_%i.log">
             <PatternLayout pattern="%d %p %c: %m%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy />
